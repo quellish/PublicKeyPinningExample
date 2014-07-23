@@ -14,4 +14,6 @@ Example of verifying a DER certificate
 openssl x509 -in www.google.com.der -text -noout
 
 
+Follow the examples above to create DER formatted certificate files for the hosts you are interested in connecting to. Include the certificate files in your project and make sure the are copied into the build product bundle as part of your build process.
 
+You can use PublicKeyPinningConnectionDelegate as an example of how to implement SSL public key pinning yourself, or you can subclass it when implementing your own delegate. It provides only authentication. It will evaluate server credential trust, but for all other authentication methods it falls over to the default handling of the URL loading system. It won't handle receiving data, errors, etc. - that is up to you.
