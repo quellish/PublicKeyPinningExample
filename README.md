@@ -5,6 +5,9 @@ When a client connects to a server over SSL/TLS, the server provides a certifica
 
 Using the public key has advantages over checking the whole certificate. Certificates contain a public key, information about the certificate, and other keys. Certificates can change often, while the public keys within them should change much less often.
 
+THIS IS ESPECIALLY USEFUL IF YOU ARE USING SELF SIGNED CERTIFICATES.
+See [Techical Note 2232: HTTPS Server Trust Evaluation](https://developer.apple.com/library/mac/technotes/tn2232/_index.html) for more information on SSL trust evaluation.
+
 ### Getting started
 
 In order to implement SSL pinning you will need a certificate within your application to verify the remote credentials against.
