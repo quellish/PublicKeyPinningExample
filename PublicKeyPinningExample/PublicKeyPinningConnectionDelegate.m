@@ -85,80 +85,39 @@
 - (BOOL) canAllowServerTrustForProtectionSpace:(NSURLProtectionSpace *)protectionSpace {
     BOOL                    result              = NO;
     SecKeyRef               serverKey           = NULL;
-    SecKeyRef               localKey            = NULL;
+    SecCertificateRef       localCertificate    = NULL;
     SecTrustRef             serverTrust         = NULL;
     
     // Extract the public key from the server credential
     serverTrust = [protectionSpace serverTrust];
     serverKey = SecTrustCopyPublicKey(serverTrust);
     
-    localKey = [self localKeyForHost:[protectionSpace host]];
+    localCertificate = [self localCertificateForHost:[protectionSpace host]];
     // Compare the server public key against our local public key. This is not a very good way to compare them, but it works.
-    if (localKey != NULL){
-        result = [(__bridge id)localKey isEqual:(__bridge id)serverKey];
+    if (localCertificate != NULL){
+        SecTrustResultType  trustResult;
+        SecCertificateRef	localCertificates[1];
+        CFArrayRef          anchorCertificates  = NULL;
+        OSStatus            status              = errSecSuccess;
+        
+        localCertificates[0] = localCertificate;
+        anchorCertificates = CFArrayCreate(NULL, (void *)localCertificates, 1, &kCFTypeArrayCallBacks);
+        SecTrustSetAnchorCertificates(serverTrust, anchorCertificates);
+        SecTrustSetAnchorCertificatesOnly(serverTrust, YES);
+        
+        if (anchorCertificates != NULL){
+            CFRelease(anchorCertificates);
+        }
+        
+        status = SecTrustEvaluate(serverTrust, &trustResult);
+        result = (status == noErr) && ((trustResult == kSecTrustResultUnspecified) || (trustResult == kSecTrustResultProceed));
+        
     } else {
         result = NO;
     }
     return result;
 }
 
-/**
- *  Returns the public key for the specified host.
- *
- *  @param host The host
- *
- *  @return The public key
- */
-
-- (SecKeyRef)localKeyForHost:(NSString *)host {
-    OSStatus            status      = errSecSuccess;
-    SecCertificateRef   localCert   = NULL;
-    SecKeyRef           result      = NULL;
-    SecPolicyRef		policy		= NULL;
-    CFArrayRef			certs		= NULL;
-    SecTrustRef			trust		= NULL;
-    SecTrustResultType	trustType	= kSecTrustResultInvalid;
-    
-    localCert = [self localCertificateForHost:host];
-    
-    if (localCert != NULL){
-        policy = SecPolicyCreateBasicX509();
-        SecCertificateRef certArray[1] = { localCert };
-        certs = CFArrayCreate(kCFAllocatorDefault, (void *) certArray, 1, NULL);
-        status = SecTrustCreateWithCertificates(certs, policy, &trust);
-        if (status == errSecSuccess){
-            status = SecTrustEvaluate(trust, &trustType);
-            
-            // Evaluate the trust
-            switch (trustType){
-                case kSecTrustResultInvalid:
-                case kSecTrustResultDeny:
-                case kSecTrustResultUnspecified:
-                case kSecTrustResultFatalTrustFailure:
-                case kSecTrustResultOtherError:
-                    break;
-                case kSecTrustResultRecoverableTrustFailure:
-                    result = SecTrustCopyPublicKey(trust);
-                    break;
-                case kSecTrustResultProceed:
-                    result = SecTrustCopyPublicKey(trust);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    
-    if (policy != NULL){
-		CFRelease(policy);
-	}
-	
-	if (certs != NULL){
-		CFRelease(certs);
-	}
-    
-    return result;
-}
 
 /**
  *  Load the certificate from local storage.
