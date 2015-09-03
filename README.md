@@ -27,7 +27,7 @@ Example of converting a certificate in `PEM` format to `DER`:
 
 Example of verifying a DER certificate:
 
-`openssl x509 -in www.google.com.der -text -noout`
+`openssl x509 -inform der -in www.google.com.der -text -noout`
 
 
 Follow the examples above to create `DER` formatted certificate files for the hosts you are interested in connecting to. Include the certificate files in your project and make sure the are copied into the build product bundle as part of your build process.
